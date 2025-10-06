@@ -12,32 +12,36 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-void next_node(int node_id, int fd, int num_nodes);
+void next_node(int node_id, int fd, int num_nodes, int fd_final);
 
 int main(int argc, char *argv[])
 {
-    int fd[2];
+    int fd[2], fd_final[2];
     int pipe_creation_result;
     pid_t pid, child;
     int status;
+    int input;
     int output = 3;
     
     int k = atoi(argv[1]);
     pipe_creation_result = pipe(fd);
+    pipe(fd_final);
 
     pid = fork();
 
     if (pid == 0) {
-        next_node(1, fd[0], k);
+        next_node(1, fd[0], k, fd_final[1]);
     } else { 
         write(fd[1], &output, sizeof(int));
         printf("Node 0 wrote [%d]\n",  output);
+        read(fd_final[0], &input, sizeof(int));
+        printf("Node 0 received [%d]\n", input);
     }
     
     return 0;
 }
 
-void next_node(int node_id, int fd, int num_nodes) {
+void next_node(int node_id, int fd, int num_nodes, int fd_final) {
     if (node_id >= num_nodes) {
         exit(0);
     }
@@ -49,9 +53,13 @@ void next_node(int node_id, int fd, int num_nodes) {
     int pipe_creation_result_next = pipe(fd_next);
     pid_t pid_next = fork();
     if (pid_next == 0) {
-        next_node(node_id + 1, fd_next[0], num_nodes);
+        next_node(node_id + 1, fd_next[0], num_nodes, fd_final);
     } else {
-        write(fd_next[1], &output, sizeof(int));
+        if (node_id == num_nodes - 1) { 
+           write(fd_final, &output, sizeof(int));
+        } else {
+           write(fd_next[1], &output, sizeof(int));
+        }
         printf("Node %d wrote [%d]\n", node_id, output);
     }
 }
