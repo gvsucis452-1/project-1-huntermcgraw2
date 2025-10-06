@@ -22,27 +22,30 @@ int main(int argc, char *argv[])
     int input;
     
     int k = atoi(argv[1]);
-    
+    pipe_creation_result = pipe(fd);
+
     for (int i = 0; i < k; i++) {
-        pipe_creation_result = pipe(fd);
         pid = fork();
         
         if (pid == 0) {
             read(fd[0], &input, sizeof(int));
-            printf("Node %d received [%d]\n", k + 1, input);
+            printf("Node %d received [%d]\n", i + 1, input);
             int fd_next[2];
             int pipe_creation_result_next = pipe(fd_next);
             pid_t pid_next = fork();
             if (pid_next == 0) {
                 read(fd_next[0], &input, sizeof(int));
-                printf("Node %d received [%d]\n", k + 2, input);
+                printf("Node %d received [%d]\n", i + 1, input);
             } else {
                 write(fd_next[1], &output, sizeof(int));
-                printf("Node %d wrote [%d] to child process\n", k + 1, output);
+                printf("Node %d wrote [%d] to child process\n", i + 1, output);
             }
         } else {
-            write(fd[1], &output, sizeof(int));
-            printf("Node %d wrote [%d] to child process\n", k,  output);
+            if (i == 0) {
+                write(fd[1], &output, sizeof(int));
+                printf("Node %d wrote [%d] to child process\n", i,  output);
+            }
+            
         }
 
     }
