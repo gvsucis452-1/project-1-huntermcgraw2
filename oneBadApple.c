@@ -12,62 +12,71 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-void next_node(int node_id, int fd, int num_nodes, int fd_final);
+int create_nodes(int node_id, int num_nodes, int fd[][2]);
+int send_message(int node_id, int num_nodes, char *header, int fd[][2]);
 
 int main(int argc, char *argv[])
-{
-    int fd[2], fd_final[2];
-    int pipe_creation_result;
-    pid_t pid, child;
-    int status;
-    char input[128];
-    char output[128] = "3Apple";
-    
+{    
     int k = atoi(argv[1]);
-    pipe_creation_result = pipe(fd);
-    pipe(fd_final);
+    int fd[k][2];
 
     pid = fork();
 
     if (pid == 0) {
-        next_node(1, fd[0], k, fd_final[1]);
-    } else { 
-        write(fd[1], output, sizeof(output));
-        printf("Node 0 wrote [%s]\n",  output);
-        read(fd_final[0], input, sizeof(input));
-        printf("Node 0 received [%s]\n", input);
+        create_nodes(1, k, fd);
+    } else {
+
+        int message_status;
+        char message[128];
+        char node;
+        char header[128];
+        pipe(fd[0]);
+
+        while (1) {
+        printf("Send a message: ");
+        scanf("%s", message);
+        printf("Send to node: ");
+        scanf("%c", &node);
+
+        strcpy(header, node);
+        strcat(header, message);         
+        message_status = send_message(0, header, fd);
+        }
     }
     
     return 0;
 }
 
-void next_node(int node_id, int fd, int num_nodes, int fd_final) {
+int create_nodes(int node_id, int num_nodes, int fd[][2]) {
+    if (node_id >= num_nodes) {
+        return 1;
+    }
+    pipe(fd[node_id]);
+    pid_t pid_next = fork();
+    if (pid_next == 0) {
+        create_nodes(node_id + 1, fd_next[0], num_nodes, fd_final);
+    } else {
+        continue;
+    }
+}
+
+int send_message(int node_id, int num_nodes, char *header, int fd[][2]) {
+    char input[128];
+    char output[128];
+
     if (node_id >= num_nodes) {
         exit(0);
     }
-    char input[128];
-    read(fd, input, sizeof(input));
-    printf("Node %d received [%s]\n", node_id, input);
-    int intended_receiver = input[0] % 48;
-    char output[128];
-    if (node_id == intended_receiver) {
-       printf("Node %d is the intended recipient and has received the message!\n", node_id);
-       strcpy(output, "");
-    } else {
-       strcpy(output, input);
-    }
 
-    int fd_next[2];
-    int pipe_creation_result_next = pipe(fd_next);
-    pid_t pid_next = fork();
-    if (pid_next == 0) {
-        next_node(node_id + 1, fd_next[0], num_nodes, fd_final);
+    if (node_id = 0) {
+        read(fd[num_nodes-1][0], input, sizeof(input));
     } else {
-        if (node_id == num_nodes - 1) { 
-           write(fd_final, output, sizeof(output));
-        } else {
-           write(fd_next[1], output, sizeof(output));
-        }
-        printf("Node %d wrote [%s]\n", node_id, output);
+        read(fd[node_id], input, sizeof(input));
     }
+    printf("Node %d received [%s]\n", node_id, input);
+    strcpy(output, input);
+    write(fd[num_nodes][1], output, sizeof(output));
+    printf("Node %d wrote [%s]\n", node_id, output);
+
+    return 1;
 }
