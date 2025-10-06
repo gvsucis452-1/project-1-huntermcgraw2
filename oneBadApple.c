@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
     int k = atoi(argv[1]);
     int fd[k][2];
 
-    pid = fork();
+    pid_t pid = fork();
 
     if (pid == 0) {
         create_nodes(1, k, fd);
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
 
         int message_status;
         char message[128];
-        char node;
+        char node[128];
         char header[128];
         pipe(fd[0]);
 
@@ -36,11 +36,11 @@ int main(int argc, char *argv[])
         printf("Send a message: ");
         scanf("%s", message);
         printf("Send to node: ");
-        scanf("%c", &node);
+        scanf("%s", node);
 
         strcpy(header, node);
         strcat(header, message);         
-        message_status = send_message(0, header, fd);
+        message_status = send_message(0, k, header, fd);
         }
     }
     
@@ -54,9 +54,9 @@ int create_nodes(int node_id, int num_nodes, int fd[][2]) {
     pipe(fd[node_id]);
     pid_t pid_next = fork();
     if (pid_next == 0) {
-        create_nodes(node_id + 1, fd_next[0], num_nodes, fd_final);
+        create_nodes(node_id + 1, num_nodes, fd);
     } else {
-        continue;
+
     }
 }
 
@@ -71,7 +71,7 @@ int send_message(int node_id, int num_nodes, char *header, int fd[][2]) {
     if (node_id = 0) {
         read(fd[num_nodes-1][0], input, sizeof(input));
     } else {
-        read(fd[node_id], input, sizeof(input));
+        read(fd[node_id][0], input, sizeof(input));
     }
     printf("Node %d received [%s]\n", node_id, input);
     strcpy(output, input);
