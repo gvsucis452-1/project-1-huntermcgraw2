@@ -12,7 +12,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-void next_node(int node_id, char *fd, int num_nodes, char *fd_final);
+void next_node(int node_id, int fd, int num_nodes, int fd_final);
 
 int main(int argc, char *argv[])
 {
@@ -45,11 +45,12 @@ void next_node(int node_id, int fd, int num_nodes, int fd_final) {
     if (node_id >= num_nodes) {
         exit(0);
     }
-    int input;
+    char input[128];
     read(fd, input, sizeof(input));
     printf("Node %d received [%s]\n", node_id, input);
 
-    char output[128] = input;
+    char output[128];
+    strcpy(output, input);
 
     int fd_next[2];
     int pipe_creation_result_next = pipe(fd_next);
