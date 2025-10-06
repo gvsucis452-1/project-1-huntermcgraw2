@@ -21,7 +21,7 @@ int main(int argc, char *argv[])
     pid_t pid, child;
     int status;
     char input[128];
-    char output[128] = "Apple";
+    char output[128] = "3Apple";
     
     int k = atoi(argv[1]);
     pipe_creation_result = pipe(fd);
@@ -48,9 +48,14 @@ void next_node(int node_id, int fd, int num_nodes, int fd_final) {
     char input[128];
     read(fd, input, sizeof(input));
     printf("Node %d received [%s]\n", node_id, input);
-
+    int intended_receiver = input[0] % 48;
     char output[128];
-    strcpy(output, input);
+    if (node_id == intended_receiver) {
+       printf("Node %d is the intended recipient and has received the message!\n", node_id);
+       strcpy(output, "");
+    } else {
+       strcpy(output, input);
+    }
 
     int fd_next[2];
     int pipe_creation_result_next = pipe(fd_next);
