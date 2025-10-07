@@ -40,40 +40,41 @@ int main(int argc, char *argv[]) {
     int parent_pid = getpid(); 
     printf("Created node 0 (pid: %d)\n", parent_pid);
     create_nodes(1, k, fd);
-    signal(SIGINT, sig_handler);
-    while (1) {
-        printf("\nSend a message: ");
-        fgets(message, sizeof(message), stdin);
-        message[strlen(message) - 1] = '\0';
-        printf("Send to node: ");
-        fgets(node, sizeof(node), stdin);
-        destination = node[0] % 48;
-        while (destination >= k || destination == 0) {
-            if (destination >= k) {
-                printf("That node does not exist, try again\n");
-            } else {
-                printf("Already at node 0. Choose another node\n");
-            }
-
+    if (parent_pid == getpid()) {
+        signal(SIGINT, sig_handler);
+        while (1) {
+            printf("\nSend a message: ");
+            fgets(message, sizeof(message), stdin);
+            message[strlen(message) - 1] = '\0';
             printf("Send to node: ");
             fgets(node, sizeof(node), stdin);
             destination = node[0] % 48;
-        }
-        node[1] = '\0';
-        strcpy(header, node);
-        strcat(header, message);
+            while (destination >= k || destination == 0) {
+                if (destination >= k) {
+                    printf("That node does not exist, try again\n");
+                } else {
+                    printf("Already at node 0. Choose another node\n");
+                }
 
-        //close(fd[0][0]);
-        write(fd[0][1], header, sizeof(header));
-        printf("Node 0 (pid: %d) passed message to node 1\n", parent_pid);
+                printf("Send to node: ");
+                fgets(node, sizeof(node), stdin);
+                destination = node[0] % 48;
+            }
+            node[1] = '\0';
+            strcpy(header, node);
+            strcat(header, message);
 
-        status = read(fd[k - 1][0], input, sizeof(input));
-        if (status == -1) {
-            perror("Failed read");
+            //close(fd[0][0]);
+            write(fd[0][1], header, sizeof(header));
+            printf("Node 0 (pid: %d) passed message to node 1\n", parent_pid);
+
+            status = read(fd[k - 1][0], input, sizeof(input));
+            if (status == -1) {
+                perror("Failed read");
+            }
+            printf("Node 0 (pid: %d) received [%s]. Ready to send another message\n", parent_pid, input);
         }
-        printf("Node 0 (pid: %d) received [%s]. Ready to send another message\n", parent_pid, input);
     }
-
 
     return 0;
 }
