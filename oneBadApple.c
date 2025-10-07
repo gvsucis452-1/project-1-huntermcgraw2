@@ -38,12 +38,13 @@ int main(int argc, char *argv[]) {
         char header[128];
         char input[128];
         int status, destination;
+        int parent_pid = getpid();
 
         create_nodes(2, k, fd);
 
         signal(SIGINT, sig_handler);
         while (1) {
-            printf("Send a message: ");
+            printf("\nSend a message: ");
             fgets(message, sizeof(message), stdin);
             message[strlen(message) - 1] = '\0';
             printf("Send to node: ");
@@ -51,7 +52,7 @@ int main(int argc, char *argv[]) {
             destination = node[0] % 48;
             while (destination >= k || destination == 0) {
                 if (destination >= k) {
-                    printf("Node %d does not exist, try again\n", destination);
+                    printf("That node does not exist, try again\n");
                 } else {
                     printf("Already at node 0. Choose another node\n");
                 }
@@ -63,20 +64,17 @@ int main(int argc, char *argv[]) {
             node[1] = '\0';
             strcpy(header, node);
             strcat(header, message);
-            printf("header: %s\n", header);
 
             close(fd[0][0]);
             write(fd[0][1], header, sizeof(header));
-            printf("Node %d (pid %d)  wrote [%s]\n", 0, getpid(), header + 1);
+            printf("Node 0 (pid: %d) passed message to node 1\n", parent_pid);
 
             status = read(fd[k - 1][0], input, sizeof(input));
             if (status == -1) {
                 perror("Failed read");
             }
-            printf("Node %d received [%s]\n", 0, input);
+            printf("Node 0 (pid: %d) received [%s]. Ready to send another message\n", parent_pid, input);
         }
-        close(fd[0][1]);
-        close(fd[k - 1][0]);
     }
 
     return 0;
@@ -107,6 +105,7 @@ void send_message(int node_id, int num_nodes, int fd[][2]) {
     char output[128];
     int status;
     int intended_receiver;
+    int pid = getpid();
 
     while (1) {
         if (node_id >= num_nodes) {
@@ -119,19 +118,20 @@ void send_message(int node_id, int num_nodes, int fd[][2]) {
         if (strcmp(input, "")) {
             intended_receiver = input[0] % 48;
 
-            printf("Node %d received a message intended for node %d\n", node_id, intended_receiver);
+            printf("Node %d (pid: %d) received a message intended for node %d\n", node_id, pid, intended_receiver);
 
 
             if (node_id == intended_receiver) {
                 printf("I (node %d) am the intended recipient!\n", node_id);
                 printf("The message is: %s\n", input + 1);
+                printf("Node %d (pid: %d) set header to empty and passed it to node %d\n", node_id, pid, (node_id + 1) % num_nodes);
                 strcpy(output, "");
             } else {
-                printf("Passing message to node %d\n", node_id + 1);
+                printf("Node %d (pid: %d) passed message to node %d\n", node_id, pid, node_id + 1);
                 strcpy(output, input);
             }
         } else {
-            printf("Node %d is passing the empty header to node %d\n", node_id, (node_id + 1) % num_nodes);
+            printf("Node %d (pid: %d) is passing the empty header to node %d\n", node_id, pid, (node_id + 1) % num_nodes);
             strcpy(output, input);
         }
         write(fd[node_id][1], output, sizeof(output));
