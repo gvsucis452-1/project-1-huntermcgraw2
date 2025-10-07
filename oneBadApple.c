@@ -14,10 +14,10 @@
 #include <errno.h>
 
 int create_nodes(int node_id, int num_nodes, int fd[][2]);
+
 int send_message(int node_id, int num_nodes, int fd[][2]);
 
-int main(int argc, char *argv[])
-{    
+int main(int argc, char *argv[]) {
     printf("Created node 0\n");
     int k = atoi(argv[1]);
     int fd[k][2];
@@ -31,8 +31,6 @@ int main(int argc, char *argv[])
         printf("Created node 1\n");
         create_nodes(2, k, fd);
     } else {
-
-        int message_status;
         char message[128];
         char node[128];
         char header[128];
@@ -42,55 +40,47 @@ int main(int argc, char *argv[])
         sleep(1); // get rid of this
 
         while (1) {
-        printf("Send a message: ");
-        scanf("%s", message);
-        printf("Send to node: ");
-        scanf("%s", node);
+            printf("Send a message: ");
+            scanf("%s", message);
+            printf("Send to node: ");
+            scanf("%s", node);
 
-        strcpy(header, node);
-        strcat(header, message);
-        printf("header: %s\n", header);
-        close(fd[0][0]);
-        write(fd[0][1], header, sizeof(header));
-        //close(fd[0][1]);
-        printf("Node %d (pid %d)  wrote [%s]\n", 0, getpid(),  header);
-        status = read(fd[k-1][0], input, sizeof(input));
-        //printf("NODE %d READ STATUS: %d\n", k, status);
-        if (status == -1) {
-           perror("Failed read");
-        }
-        //close(fd[k-1][0]);
-        printf("Node %d received [%s]\n", 0, input);
-        //message_status = send_message(0, k, fd);
-        
+            strcpy(header, node);
+            strcat(header, message);
+            printf("header: %s\n", header);
+
+            close(fd[0][0]);
+            write(fd[0][1], header, sizeof(header));
+            printf("Node %d (pid %d)  wrote [%s]\n", 0, getpid(), header);
+
+            status = read(fd[k - 1][0], input, sizeof(input));
+            if (status == -1) {
+                perror("Failed read");
+            }
+            printf("Node %d received [%s]\n", 0, input);
         }
         close(fd[0][1]);
-        close(fd[k-1][0]);
+        close(fd[k - 1][0]);
     }
-    
+
     return 0;
 }
 
 int create_nodes(int node_id, int num_nodes, int fd[][2]) {
-    //printf("create_nodes called\n");
-    if (node_id > num_nodes) {
+    if (node_id >= num_nodes) {
         return 1;
     }
-    if (node_id < num_nodes) {
-       pipe(fd[node_id - 1]);
+    if (node_id < num_nodes - 1) {
+        pipe(fd[node_id - 1]);
     }
-   // printf("Created pipe at node %d\n", node_id);
     pid_t pid_next = fork();
     if (pid_next == 0) {
-        close(fd[node_id-1][1]);
-        printf("Created node %d\n", node_id);
+        close(fd[node_id - 1][1]);
+        printf("Created node %d\n", node_id + 1);
         create_nodes(node_id + 1, num_nodes, fd);
-        //printf("About to create node %d.  Num nodes: %d\n", node_id+1, num_nodes);
     } else {
-        close(fd[node_id-1][0]);
-       // while(1) {
-           send_message(node_id - 1, num_nodes, fd);
-       // }
+        close(fd[node_id][0]);
+        send_message(node_id, num_nodes, fd);
     }
 }
 
@@ -99,41 +89,29 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
     char output[128];
     int status;
     int intended_receiver;
-    //printf("Entered send_message for node %d\n", node_id);
-    while(1) {
-    if (node_id >= num_nodes) {
-        exit(0);
-    }
 
-    if (node_id == 0) {
-       //printf("Attempting to read from node %d\n", node_id);
-       // read(fd[num_nodes-1][0], input, sizeof(input));
-       strcpy(output, "3one");
-    } else {
-        //printf("Attempting to read from node %d\n", node_id);
-        status = read(fd[node_id-1][0], input, sizeof(input));
-        //printf("NODE %d READ STATUS: %d\n", node_id, status);
+    while (1) {
+        if (node_id >= num_nodes) {
+            exit(0);
+        }
+        status = read(fd[node_id - 1][0], input, sizeof(input));
         if (status == -1) {
             perror("Failed read");
         }
-        //close(fd[node_id-1][0]);
-    }
-    intended_receiver = input[0] % 48;
-    printf("Node %d received [%s]\n", node_id, input + 1);
-    if(node_id == intended_receiver) {
-       printf("I (node %d) am the intended receipient!\n", node_id);
-       strcpy(output, "");
-    } else {
-       strcpy(output, input);
-  
-    }
-    write(fd[node_id][1], output, sizeof(output));
-    printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(),  output);
+        intended_receiver = input[0] % 48;
+        printf("Node %d received [%s]\n", node_id, input + 1);
+        if (node_id == intended_receiver) {
+            printf("I (node %d) am the intended recipient!\n", node_id);
+            strcpy(output, "");
+        } else {
+            strcpy(output, input);
+        }
+        write(fd[node_id][1], output, sizeof(output));
+        printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(), output);
     }
 
-    close(fd[node_id-1][0]);
+    close(fd[node_id - 1][0]);
     close(fd[node_id][1]);
-    
+
     return 1;
 }
-
