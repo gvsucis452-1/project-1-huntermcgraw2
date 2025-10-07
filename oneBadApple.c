@@ -51,13 +51,13 @@ int main(int argc, char *argv[]) {
 
             close(fd[0][0]);
             write(fd[0][1], header, sizeof(header));
-            printf("Node %d (pid %d)  wrote [%s]\n", 0, getpid(), header);
+            printf("Node %d (pid %d)  wrote [%s]\n", 0, getpid(), header + 1);
 
             status = read(fd[k - 1][0], input, sizeof(input));
             if (status == -1) {
                 perror("Failed read");
             }
-            printf("Node %d received [%s]\n", 0, input);
+            printf("Node %d received [%s]\n", 0, input + 1);
         }
         close(fd[0][1]);
         close(fd[k - 1][0]);
@@ -107,7 +107,7 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
             strcpy(output, input);
         }
         write(fd[node_id][1], output, sizeof(output));
-        printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(), output);
+        printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(), output + 1);
     }
 
     close(fd[node_id - 1][0]);
