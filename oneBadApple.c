@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
         char node[128];
         char header[128];
         char input[128];
+        int status;
 
         sleep(1); // get rid of this
 
@@ -51,14 +52,20 @@ int main(int argc, char *argv[])
         printf("header: %s\n", header);
         close(fd[0][0]);
         write(fd[0][1], header, sizeof(header));
-        close(fd[0][1]);
+        //close(fd[0][1]);
         printf("Node %d (pid %d)  wrote [%s]\n", 0, getpid(),  header);
-        read(fd[k-1][0], input, sizeof(input));
-        close(fd[k-1][0]);
+        status = read(fd[k-1][0], input, sizeof(input));
+        printf("NODE %d READ STATUS: %d\n", k, status);
+        if (status == -1) {
+           perror("Failed read");
+        }
+        //close(fd[k-1][0]);
         printf("Node %d received [%s]\n", 0, input);
         //message_status = send_message(0, k, fd);
         
         }
+        close(fd[0][1]);
+        close(fd[k-1][0]);
     }
     
     return 0;
@@ -90,6 +97,7 @@ int create_nodes(int node_id, int num_nodes, int fd[][2]) {
 int send_message(int node_id, int num_nodes, int fd[][2]) {
     char input[128];
     char output[128];
+    int status;
     printf("Entered send_message for node %d\n", node_id);
     while(1) {
     if (node_id >= num_nodes) {
@@ -102,20 +110,23 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
        strcpy(output, "3one");
     } else {
         printf("Attempting to read from node %d\n", node_id);
-        int status = read(fd[node_id-1][0], input, sizeof(input));
+        status = read(fd[node_id-1][0], input, sizeof(input));
         printf("NODE %d READ STATUS: %d\n", node_id, status);
         if (status == -1) {
             perror("Failed read");
         }
-        close(fd[node_id-1][0]);
+        //close(fd[node_id-1][0]);
     }
     printf("Node %d received [%s]\n", node_id, input);
     strcpy(output, input);
     write(fd[node_id][1], output, sizeof(output));
-    close(fd[node_id][1]);
+    //close(fd[node_id][1]);
     printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(),  output);
-    sleep(1);
     }
+
+    close(fd[node_id-1][0]);
+    close(fd[node_id][1]);
+    
     return 1;
 }
 
