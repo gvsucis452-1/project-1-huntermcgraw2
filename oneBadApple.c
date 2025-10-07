@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
         //close(fd[0][1]);
         printf("Node %d (pid %d)  wrote [%s]\n", 0, getpid(),  header);
         status = read(fd[k-1][0], input, sizeof(input));
-        printf("NODE %d READ STATUS: %d\n", k, status);
+        //printf("NODE %d READ STATUS: %d\n", k, status);
         if (status == -1) {
            perror("Failed read");
         }
@@ -98,29 +98,36 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
     char input[128];
     char output[128];
     int status;
-    printf("Entered send_message for node %d\n", node_id);
+    int intended_receiver;
+    //printf("Entered send_message for node %d\n", node_id);
     while(1) {
     if (node_id >= num_nodes) {
         exit(0);
     }
 
     if (node_id == 0) {
-        printf("Attempting to read from node %d\n", node_id);
+       //printf("Attempting to read from node %d\n", node_id);
        // read(fd[num_nodes-1][0], input, sizeof(input));
        strcpy(output, "3one");
     } else {
-        printf("Attempting to read from node %d\n", node_id);
+        //printf("Attempting to read from node %d\n", node_id);
         status = read(fd[node_id-1][0], input, sizeof(input));
-        printf("NODE %d READ STATUS: %d\n", node_id, status);
+        //printf("NODE %d READ STATUS: %d\n", node_id, status);
         if (status == -1) {
             perror("Failed read");
         }
         //close(fd[node_id-1][0]);
     }
-    printf("Node %d received [%s]\n", node_id, input);
-    strcpy(output, input);
+    intended_receiver = input[0] % 48;
+    printf("Node %d received [%s]\n", node_id, input + 1);
+    if(node_id == intended_receiver) {
+       printf("I (node %d) am the intended receipient!\n", node_id);
+       strcpy(output, "");
+    } else {
+       strcpy(output, input);
+  
+    }
     write(fd[node_id][1], output, sizeof(output));
-    //close(fd[node_id][1]);
     printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(),  output);
     }
 
