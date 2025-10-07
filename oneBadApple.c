@@ -109,26 +109,27 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
         if (status == -1) {
             perror("Failed read");
         }
-        intended_receiver = input[0] % 48;
-       
-        printf("Node %d received [%s]\n", node_id, input);
+
+        printf("Node %d received a message intended for node %d\n", node_id, intended_receiver);
         
         if (node_id == num_nodes - 1 && intended_receiver > node_id) {
             printf("Destination of %d does not exist in this ring\n", intended_receiver);
             strcpy(output, "");
         } else if (node_id == intended_receiver) {
             printf("I (node %d) am the intended recipient!\n", node_id);
+            printf("The message is: %s\n", input + 1);
             strcpy(output, "");
         } else {
+            printf("Passing message to node %d", node_id + 1);
             strcpy(output, input);
         }
         //sleep(rand() % 3);
         write(fd[node_id][1], output, sizeof(output));
-        if (!strcmp(output, "")) { 
+        /*if (!strcmp(output, "")) {
            printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(), output);
         } else {
            printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(), output + 1);
-        } 
+        }*/
     }
 
     close(fd[node_id - 1][0]);
