@@ -12,12 +12,18 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <signal.h>
+
+void sig_handler(int);
 
 int create_nodes(int node_id, int num_nodes, int fd[][2]);
 
 int send_message(int node_id, int num_nodes, int fd[][2]);
 
 int main(int argc, char *argv[]) {
+
+    signal(SIGINT, sig_handler);
+
     printf("Created node 0\n");
     int k = atoi(argv[1]);
     int fd[k][2];
@@ -29,15 +35,14 @@ int main(int argc, char *argv[]) {
     if (pid == 0) {
         close(fd[0][1]);
         printf("Created node 1\n");
-        create_nodes(2, k, fd);
     } else {
         char message[128];
         char node[128];
         char header[128];
         char input[128];
         int status;
-
-        sleep(1); // get rid of this
+        
+        create_nodes(2, k, fd);
 
         while (1) {
             printf("Send a message: ");
@@ -69,20 +74,20 @@ int main(int argc, char *argv[]) {
 }
 
 int create_nodes(int node_id, int num_nodes, int fd[][2]) {
-    if (node_id > num_nodes) {
-        return 1;
-    }
-    if (node_id < num_nodes) {
-        pipe(fd[node_id - 1]);
-    }
-    pid_t pid_next = fork();
-    if (pid_next == 0) {
-        close(fd[node_id - 1][1]);
-        printf("Created node %d\n", node_id);
-        create_nodes(node_id + 1, num_nodes, fd);
-    } else {
+    if (node_id >= num_nodes) {
         close(fd[node_id - 1][0]);
         send_message(node_id - 1, num_nodes, fd);
+    } else {
+        pipe(fd[node_id - 1]);
+        pid_t pid_next = fork();
+        if (pid_next == 0) {
+            close(fd[node_id - 1][1]);
+            printf("Created node %d\n", node_id);
+            create_nodes(node_id + 1, num_nodes, fd);
+        } else {
+            close(fd[node_id - 1][0]);
+            send_message(node_id - 1, num_nodes, fd);
+        }
     }
 }
 
@@ -93,6 +98,9 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
     int intended_receiver;
 
     while (1) {
+
+        //sleep(rand() % 3);
+
         if (node_id >= num_nodes) {
             exit(0);
         }
@@ -113,6 +121,7 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
         } else {
             strcpy(output, input);
         }
+        //sleep(rand() % 3);
         write(fd[node_id][1], output, sizeof(output));
         if (!strcmp(output, "")) { 
            printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(), output);
@@ -125,4 +134,13 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
     close(fd[node_id][1]);
 
     return 1;
+}
+
+void sig_handler(int sig_num) {
+    if (sig_num == SIGINT) {
+        printf(" received an intterupt.\n");
+        sleep(1);
+        printf("Time to exit\n");
+        exit(0);
+    }
 }
