@@ -81,8 +81,10 @@ int create_nodes(int node_id, int num_nodes, int fd[][2]) {
     }
     pid_t pid_next = fork();
     if (pid_next == 0) {
-        close(fd[node_id - 1][1]);
-        printf("Created node %d\n", node_id);
+        if (node_id < num_nodes) {
+            close(fd[node_id - 1][1]);
+            printf("Created node %d\n", node_id);
+        }
         create_nodes(node_id + 1, num_nodes, fd);
     } else {
         close(fd[node_id - 1][0]);
