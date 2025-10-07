@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
         strcpy(header, node);
         strcat(header, message);
 
-        close(fd[0][0]);
+        //close(fd[0][0]);
         write(fd[0][1], header, sizeof(header));
         printf("Node 0 (pid: %d) passed message to node 1\n", parent_pid);
 
@@ -96,7 +96,9 @@ int create_nodes(int node_id, int num_nodes, int fd[][2]) {
         create_nodes(node_id + 1, num_nodes, fd);
     } else {
         close(fd[node_id - 1][0]);
-        send_message(node_id - 1, num_nodes, fd);
+        if (node_id != 1) {
+            send_message(node_id - 1, num_nodes, fd);
+        }
     }
 }
 
