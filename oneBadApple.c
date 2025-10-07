@@ -22,8 +22,6 @@ int send_message(int node_id, int num_nodes, int fd[][2]);
 
 int main(int argc, char *argv[]) {
 
-    signal(SIGINT, sig_handler);
-
     printf("Created node 0\n");
     int k = atoi(argv[1]);
     int fd[k][2];
@@ -44,6 +42,7 @@ int main(int argc, char *argv[]) {
         
         create_nodes(2, k, fd);
 
+        signal(SIGINT, sig_handler);
         while (1) {
             printf("Send a message: ");
             fgets(message, sizeof(message), stdin);
@@ -138,8 +137,7 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
 
 void sig_handler(int sig_num) {
     if (sig_num == SIGINT) {
-        printf(" received an intterupt.\n");
-        sleep(1);
+        printf(" received an interrupt.\n");
         printf("Time to exit\n");
         exit(0);
     }
