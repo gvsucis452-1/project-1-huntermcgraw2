@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
     pid_t pid = fork();
 
     if (pid == 0) {
+        close(fd[0][0]);
         printf("Created node 1\n");
         create_nodes(2, k, fd);
     } else {
@@ -60,15 +61,16 @@ int create_nodes(int node_id, int num_nodes, int fd[][2]) {
     if (node_id >= num_nodes) {
         return 1;
     }
-    pipe(fd[node_id]);
+    pipe(fd[node_id - 1]);
    // printf("Created pipe at node %d\n", node_id);
     pid_t pid_next = fork();
     if (pid_next == 0) {
+        close(fd[node_id-1][0]);
         printf("Created node %d\n", node_id);
         create_nodes(node_id + 1, num_nodes, fd);
         //printf("About to create node %d.  Num nodes: %d\n", node_id+1, num_nodes);
     } else {
-
+        close(fd[node_id-1][0]);
     }
 }
 
@@ -86,13 +88,13 @@ int send_message(int node_id, int num_nodes, char *header, int fd[][2]) {
     } else {
         printf("Attempting to read from node %d\n", node_id);
         read(fd[node_id-1][0], input, sizeof(input));
-        close(fd[node_id-1][0]);
+      //  close(fd[node_id-1][0]);
     }
     printf("Node %d received [%s]\n", node_id, input);
     strcpy(output, input);
     write(fd[node_id][1], output, sizeof(output));
     close(fd[node_id][1]);
-    printf("Node %d wrote [%s]\n", node_id, output);
+    printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(),  output);
     send_message(node_id + 1, num_nodes, output, fd);
 
     return 1;
