@@ -38,9 +38,8 @@ int main(int argc, char *argv[]) {
         if (status == -1) {
             perror("Failed read");
         }
-        printf("%s\n", input);
         while (1) {
-            printf("Send a message: ");
+            printf("\nSend a message: ");
             fgets(message, sizeof(message), stdin);
             message[strlen(message) - 1] = '\0';
             printf("Send to node: ");
