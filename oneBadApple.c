@@ -24,19 +24,11 @@ int main(int argc, char *argv[]) {
     int k = atoi(argv[1]);
     int fd[k][2];
     pipe(fd[k - 1]);
-    /*pipe(fd[0]);
-        pid_t pid = fork();
-
-        if (pid == 0) {
-            close(fd[0][1]);
-            printf("Created node 1\n");
-        }*/
-
     char message[128];
     char node[128];
     char header[128];
     char input[128];
-    int status, destination;
+    int status, destination, num_digits;
     int parent_pid = getpid();
     signal(SIGINT, sig_handler);
     printf("Created node 0 (pid: %d)\n", parent_pid);
@@ -47,13 +39,17 @@ int main(int argc, char *argv[]) {
             perror("Failed read");
         }
         printf("%s\n", input);
+        num_digits = 0;
+        for (int i = 1; i <= k; i*=10) {
+            num_digits++;
+        }
         while (1) {
             printf("Send a message: ");
             fgets(message, sizeof(message), stdin);
             message[strlen(message) - 1] = '\0';
             printf("Send to node: ");
             fgets(node, sizeof(node), stdin);
-            destination = node[0] % 48;
+            destination = atoi(node);
             while (destination >= k || destination == 0) {
                 if (destination >= k) {
                     printf("That node does not exist, try again\n");
@@ -63,15 +59,33 @@ int main(int argc, char *argv[]) {
 
                 printf("Send to node: ");
                 fgets(node, sizeof(node), stdin);
-                destination = node[0] % 48;
+                destination = atoi(node);
             }
-            node[1] = '\0';
+            node[strlen(node) - 1] = '\0';
+            int destination_digits = 0;
+            for (int i = 1; i <= destination; i*=10) {
+                destination_digits++;
+            }
+            char temp[128];
+            if (destination_digits < num_digits) {
+                 printf("TRUE");
+                 strcpy(temp, "0");
+            int i = destination_digits + 1;
+            while (i < num_digits) {
+                 strcat(temp, "0");
+                 i++;
+            }
+            strcpy(header, temp);
+            strcat(header, node);
+            printf("%s", header);
+            } else {
             strcpy(header, node);
+            }
             strcat(header, message);
 
-            //close(fd[0][0]);
             write(fd[0][1], header, sizeof(header));
             printf("Node 0 (pid: %d) passed message to node 1\n", parent_pid);
+            printf("HEADER: %s\n", header);
 
             status = read(fd[k - 1][0], input, sizeof(input));
             if (status == -1) {
@@ -116,7 +130,12 @@ void send_message(int node_id, int num_nodes, int fd[][2]) {
     int status;
     int intended_receiver;
     int pid = getpid();
+    char temp[128];
 
+        int num_digits = 0;
+        for (int i = 1; i <= num_nodes; i*=10) {
+            num_digits++;
+        }
     while (1) {
         if (node_id >= num_nodes) {
             exit(0);
@@ -126,14 +145,15 @@ void send_message(int node_id, int num_nodes, int fd[][2]) {
             perror("Failed read");
         }
         if (strcmp(input, "")) {
-            intended_receiver = input[0] % 48;
+        strncpy(temp, input, num_digits);
+        intended_receiver = atoi(temp);
 
             printf("Node %d (pid: %d) received a message intended for node %d\n", node_id, pid, intended_receiver);
 
 
             if (node_id == intended_receiver) {
                 printf("I (node %d) am the intended recipient!\n", node_id);
-                printf("The message is: %s\n", input + 1);
+                printf("The message is: %s\n", input + num_digits);
                 printf("Node %d (pid: %d) set header to empty and passed it to node %d\n", node_id, pid,
                        (node_id + 1) % num_nodes);
                 strcpy(output, "");
