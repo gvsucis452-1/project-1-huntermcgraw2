@@ -41,9 +41,11 @@ int main(int argc, char *argv[]) {
 
         while (1) {
             printf("Send a message: ");
-            scanf("%s", message);
+            fgets(message, sizeof(message), stdin);
+            message[strlen(message) - 1] = '\0';
             printf("Send to node: ");
-            scanf("%s", node);
+            fgets(node, sizeof(node), stdin);
+            node[1] = '\0';
 
             strcpy(header, node);
             strcat(header, message);
@@ -57,7 +59,7 @@ int main(int argc, char *argv[]) {
             if (status == -1) {
                 perror("Failed read");
             }
-            printf("Node %d received [%s]\n", 0, input + 1);
+            printf("Node %d received [%s]\n", 0, input);
         }
         close(fd[0][1]);
         close(fd[k - 1][0]);
@@ -99,15 +101,24 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
             perror("Failed read");
         }
         intended_receiver = input[0] % 48;
-        printf("Node %d received [%s]\n", node_id, input + 1);
-        if (node_id == intended_receiver) {
+       
+        printf("Node %d received [%s]\n", node_id, input);
+        
+        if (node_id == num_nodes - 1 && intended_receiver > node_id) {
+            printf("Destination of %d does not exist in this ring\n", intended_receiver);
+            strcpy(output, "");
+        } else if (node_id == intended_receiver) {
             printf("I (node %d) am the intended recipient!\n", node_id);
             strcpy(output, "");
         } else {
             strcpy(output, input);
         }
         write(fd[node_id][1], output, sizeof(output));
-        printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(), output + 1);
+        if (!strcmp(output, "")) { 
+           printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(), output);
+        } else {
+           printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(), output + 1);
+        } 
     }
 
     close(fd[node_id - 1][0]);
