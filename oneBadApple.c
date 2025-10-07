@@ -14,8 +14,6 @@
 #include <errno.h>
 #include <signal.h>
 
-// git push check
-
 void sig_handler(int);
 
 int create_nodes(int node_id, int num_nodes, int fd[][2]);
