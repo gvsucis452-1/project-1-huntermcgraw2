@@ -21,7 +21,6 @@ int create_nodes(int node_id, int num_nodes, int fd[][2]);
 void send_message(int node_id, int num_nodes, int fd[][2]);
 
 int main(int argc, char *argv[]) {
-    printf("Created node 0\n");
     int k = atoi(argv[1]);
     int fd[k][2];
     pipe(fd[k - 1]);
@@ -38,10 +37,9 @@ int main(int argc, char *argv[]) {
     char header[128];
     char input[128];
     int status, destination;
-    int parent_pid = getpid();
-
+    int parent_pid = getpid(); 
+    printf("Created node 0 (pid: %d)\n", parent_pid);
     create_nodes(1, k, fd);
-
     signal(SIGINT, sig_handler);
     while (1) {
         printf("\nSend a message: ");
@@ -91,7 +89,7 @@ int create_nodes(int node_id, int num_nodes, int fd[][2]) {
     if (pid_next == 0) {
         if (node_id < num_nodes) {
             close(fd[node_id - 1][1]);
-            printf("Created node %d\n", node_id);
+            printf("Created node %d (pid: %d)\n", node_id, getpid());
         }
         create_nodes(node_id + 1, num_nodes, fd);
     } else {
