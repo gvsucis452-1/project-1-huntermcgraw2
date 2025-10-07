@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
         char node[128];
         char header[128];
         char input[128];
-        int status;
+        int status, destination;
         
         create_nodes(2, k, fd);
 
@@ -49,8 +49,14 @@ int main(int argc, char *argv[]) {
             message[strlen(message) - 1] = '\0';
             printf("Send to node: ");
             fgets(node, sizeof(node), stdin);
+            destination = node[0] % 48;
+            while(destination >= k) {
+                printf("Node %d does not exist, try again\n", destination);
+                printf("Send to node: ");
+                fgets(node, sizeof(node), stdin);
+                destination = node[0] % 48;
+            }
             node[1] = '\0';
-
             strcpy(header, node);
             strcat(header, message);
             printf("header: %s\n", header);
@@ -114,10 +120,8 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
 
         printf("Node %d received a message intended for node %d\n", node_id, intended_receiver);
         
-        if (node_id == num_nodes - 1 && intended_receiver > node_id) {
-            printf("Destination of %d does not exist in this ring\n", intended_receiver);
-            strcpy(output, "");
-        } else if (node_id == intended_receiver) {
+       
+        if (node_id == intended_receiver) {
             printf("I (node %d) am the intended recipient!\n", node_id);
             printf("The message is: %s\n", input + 1);
             strcpy(output, "");
