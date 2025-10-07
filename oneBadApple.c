@@ -27,55 +27,55 @@ int main(int argc, char *argv[]) {
 
     pipe(fd[0]);
     pipe(fd[k - 1]);
-    pid_t pid = fork();
+    /*    pid_t pid = fork();
 
-    if (pid == 0) {
-        close(fd[0][1]);
-        printf("Created node 1\n");
-    } else {
-        char message[128];
-        char node[128];
-        char header[128];
-        char input[128];
-        int status, destination;
-        int parent_pid = getpid();
+        if (pid == 0) {
+            close(fd[0][1]);
+            printf("Created node 1\n");*/
 
-        create_nodes(2, k, fd);
+    char message[128];
+    char node[128];
+    char header[128];
+    char input[128];
+    int status, destination;
+    int parent_pid = getpid();
 
-        signal(SIGINT, sig_handler);
-        while (1) {
-            printf("\nSend a message: ");
-            fgets(message, sizeof(message), stdin);
-            message[strlen(message) - 1] = '\0';
+    create_nodes(1, k, fd);
+
+    signal(SIGINT, sig_handler);
+    while (1) {
+        printf("\nSend a message: ");
+        fgets(message, sizeof(message), stdin);
+        message[strlen(message) - 1] = '\0';
+        printf("Send to node: ");
+        fgets(node, sizeof(node), stdin);
+        destination = node[0] % 48;
+        while (destination >= k || destination == 0) {
+            if (destination >= k) {
+                printf("That node does not exist, try again\n");
+            } else {
+                printf("Already at node 0. Choose another node\n");
+            }
+
             printf("Send to node: ");
             fgets(node, sizeof(node), stdin);
             destination = node[0] % 48;
-            while (destination >= k || destination == 0) {
-                if (destination >= k) {
-                    printf("That node does not exist, try again\n");
-                } else {
-                    printf("Already at node 0. Choose another node\n");
-                }
-
-                printf("Send to node: ");
-                fgets(node, sizeof(node), stdin);
-                destination = node[0] % 48;
-            }
-            node[1] = '\0';
-            strcpy(header, node);
-            strcat(header, message);
-
-            close(fd[0][0]);
-            write(fd[0][1], header, sizeof(header));
-            printf("Node 0 (pid: %d) passed message to node 1\n", parent_pid);
-
-            status = read(fd[k - 1][0], input, sizeof(input));
-            if (status == -1) {
-                perror("Failed read");
-            }
-            printf("Node 0 (pid: %d) received [%s]. Ready to send another message\n", parent_pid, input);
         }
+        node[1] = '\0';
+        strcpy(header, node);
+        strcat(header, message);
+
+        close(fd[0][0]);
+        write(fd[0][1], header, sizeof(header));
+        printf("Node 0 (pid: %d) passed message to node 1\n", parent_pid);
+
+        status = read(fd[k - 1][0], input, sizeof(input));
+        if (status == -1) {
+            perror("Failed read");
+        }
+        printf("Node 0 (pid: %d) received [%s]. Ready to send another message\n", parent_pid, input);
     }
+
 
     return 0;
 }
@@ -124,14 +124,16 @@ void send_message(int node_id, int num_nodes, int fd[][2]) {
             if (node_id == intended_receiver) {
                 printf("I (node %d) am the intended recipient!\n", node_id);
                 printf("The message is: %s\n", input + 1);
-                printf("Node %d (pid: %d) set header to empty and passed it to node %d\n", node_id, pid, (node_id + 1) % num_nodes);
+                printf("Node %d (pid: %d) set header to empty and passed it to node %d\n", node_id, pid,
+                       (node_id + 1) % num_nodes);
                 strcpy(output, "");
             } else {
                 printf("Node %d (pid: %d) passed message to node %d\n", node_id, pid, node_id + 1);
                 strcpy(output, input);
             }
         } else {
-            printf("Node %d (pid: %d) is passing the empty header to node %d\n", node_id, pid, (node_id + 1) % num_nodes);
+            printf("Node %d (pid: %d) is passing the empty header to node %d\n", node_id, pid,
+                   (node_id + 1) % num_nodes);
             strcpy(output, input);
         }
         write(fd[node_id][1], output, sizeof(output));
