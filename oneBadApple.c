@@ -24,9 +24,8 @@ int main(int argc, char *argv[]) {
     printf("Created node 0\n");
     int k = atoi(argv[1]);
     int fd[k][2];
-
-    pipe(fd[0]);
-    /*pipe(fd[k - 1]);
+    pipe(fd[k - 1]);
+    /*pipe(fd[0]);
         pid_t pid = fork();
 
         if (pid == 0) {
