@@ -41,6 +41,11 @@ int main(int argc, char *argv[]) {
     printf("Created node 0 (pid: %d)\n", parent_pid);
     create_nodes(1, k, fd);
     if (parent_pid == getpid()) {
+        status = read(fd[k - 1][0], input, sizeof(input));
+        if (status == -1) {
+            perror("Failed read");
+        }
+        printf("%s\n", input);
         signal(SIGINT, sig_handler);
         while (1) {
             printf("\nSend a message: ");
@@ -95,6 +100,10 @@ int create_nodes(int node_id, int num_nodes, int fd[][2]) {
         create_nodes(node_id + 1, num_nodes, fd);
     } else {
         close(fd[node_id - 1][0]);
+        if (node_id == num_nodes) {
+            char output[128] = "All nodes created\n";
+            write(fd[node_id][1], output, sizeof(output));
+        }
         if (node_id != 1) {
             send_message(node_id - 1, num_nodes, fd);
         }
