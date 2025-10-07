@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
         printf("%s\n", input);
         signal(SIGINT, sig_handler);
         while (1) {
-            printf("\nSend a message: ");
+            printf("Send a message: ");
             fgets(message, sizeof(message), stdin);
             message[strlen(message) - 1] = '\0';
             printf("Send to node: ");
@@ -102,7 +102,7 @@ int create_nodes(int node_id, int num_nodes, int fd[][2]) {
         close(fd[node_id - 1][0]);
         if (node_id == num_nodes) {
             char output[128] = "All nodes created\n";
-            write(fd[node_id][1], output, sizeof(output));
+            write(fd[node_id - 1][1], output, sizeof(output));
         }
         if (node_id != 1) {
             send_message(node_id - 1, num_nodes, fd);
