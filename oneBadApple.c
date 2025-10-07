@@ -18,10 +18,9 @@ void sig_handler(int);
 
 int create_nodes(int node_id, int num_nodes, int fd[][2]);
 
-int send_message(int node_id, int num_nodes, int fd[][2]);
+void send_message(int node_id, int num_nodes, int fd[][2]);
 
 int main(int argc, char *argv[]) {
-
     printf("Created node 0\n");
     int k = atoi(argv[1]);
     int fd[k][2];
@@ -39,7 +38,7 @@ int main(int argc, char *argv[]) {
         char header[128];
         char input[128];
         int status, destination;
-        
+
         create_nodes(2, k, fd);
 
         signal(SIGINT, sig_handler);
@@ -50,8 +49,13 @@ int main(int argc, char *argv[]) {
             printf("Send to node: ");
             fgets(node, sizeof(node), stdin);
             destination = node[0] % 48;
-            while(destination >= k) {
-                printf("Node %d does not exist, try again\n", destination);
+            while (destination >= k || destination == 0) {
+                if (destination >= k) {
+                    printf("Node %d does not exist, try again\n", destination);
+                } else {
+                    printf("Already at node 0. Choose another node\n");
+                }
+
                 printf("Send to node: ");
                 fgets(node, sizeof(node), stdin);
                 destination = node[0] % 48;
@@ -98,16 +102,13 @@ int create_nodes(int node_id, int num_nodes, int fd[][2]) {
     }
 }
 
-int send_message(int node_id, int num_nodes, int fd[][2]) {
+void send_message(int node_id, int num_nodes, int fd[][2]) {
     char input[128];
     char output[128];
     int status;
     int intended_receiver;
 
     while (1) {
-
-        //sleep(rand() % 3);
-
         if (node_id >= num_nodes) {
             exit(0);
         }
@@ -116,40 +117,31 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
             perror("Failed read");
         }
         if (strcmp(input, "")) {
-        intended_receiver = input[0] % 48;
+            intended_receiver = input[0] % 48;
 
-        printf("Node %d received a message intended for node %d\n", node_id, intended_receiver);
-        
-       
-        if (node_id == intended_receiver) {
-            printf("I (node %d) am the intended recipient!\n", node_id);
-            printf("The message is: %s\n", input + 1);
-            strcpy(output, "");
-        } else {
-            printf("Passing message to node %d\n", node_id + 1);
-            strcpy(output, input);
-        }
+            printf("Node %d received a message intended for node %d\n", node_id, intended_receiver);
+
+
+            if (node_id == intended_receiver) {
+                printf("I (node %d) am the intended recipient!\n", node_id);
+                printf("The message is: %s\n", input + 1);
+                strcpy(output, "");
+            } else {
+                printf("Passing message to node %d\n", node_id + 1);
+                strcpy(output, input);
+            }
         } else {
             printf("Node %d is passing the empty header to node %d\n", node_id, (node_id + 1) % num_nodes);
             strcpy(output, input);
         }
-        //sleep(rand() % 3);
         write(fd[node_id][1], output, sizeof(output));
-        /*if (!strcmp(output, "")) {
-           printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(), output);
-        } else {
-           printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(), output + 1);
-        }*/
     }
-
-    close(fd[node_id - 1][0]);
-    close(fd[node_id][1]);
-
-    return 1;
 }
 
 void sig_handler(int sig_num) {
     if (sig_num == SIGINT) {
+        // close all pipes
+        // end all processes?
         printf(" received an interrupt.\n");
         printf("Time to exit\n");
         exit(0);
