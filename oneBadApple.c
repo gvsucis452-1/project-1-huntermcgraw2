@@ -109,6 +109,8 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
         if (status == -1) {
             perror("Failed read");
         }
+        if (strcmp(input, "")) {
+        intended_receiver = input[0] % 48;
 
         printf("Node %d received a message intended for node %d\n", node_id, intended_receiver);
         
@@ -120,7 +122,11 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
             printf("The message is: %s\n", input + 1);
             strcpy(output, "");
         } else {
-            printf("Passing message to node %d", node_id + 1);
+            printf("Passing message to node %d\n", node_id + 1);
+            strcpy(output, input);
+        }
+        } else {
+            printf("Node %d is passing the empty header to node %d\n", node_id, (node_id + 1) % num_nodes);
             strcpy(output, input);
         }
         //sleep(rand() % 3);
