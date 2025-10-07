@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     if (pid == 0) {
         close(fd[0][1]);
         printf("Created node 1\n");
-        create_nodes(2, k, fd);
+        create_nodes(1, k, fd);
     } else {
         char message[128];
         char node[128];
@@ -67,20 +67,20 @@ int main(int argc, char *argv[]) {
 }
 
 int create_nodes(int node_id, int num_nodes, int fd[][2]) {
-    if (node_id > num_nodes) {
+    if (node_id + 1 > num_nodes) {
         return 1;
     }
-    if (node_id < num_nodes) {
+    if (node_id + 1 < num_nodes) {
         pipe(fd[node_id - 1]);
     }
     pid_t pid_next = fork();
     if (pid_next == 0) {
-        close(fd[node_id - 1][1]);
-        printf("Created node %d\n", node_id);
+        close(fd[node_id][1]);
+        printf("Created node %d\n", node_id + 1);
         create_nodes(node_id + 1, num_nodes, fd);
     } else {
-        close(fd[node_id - 1][0]);
-        send_message(node_id - 1, num_nodes, fd);
+        close(fd[node_id][0]);
+        send_message(node_id, num_nodes, fd);
     }
 }
 
