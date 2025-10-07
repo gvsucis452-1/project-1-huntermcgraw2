@@ -37,7 +37,8 @@ int main(int argc, char *argv[]) {
     char header[128];
     char input[128];
     int status, destination;
-    int parent_pid = getpid(); 
+    int parent_pid = getpid();
+    signal(SIGINT, sig_handler);
     printf("Created node 0 (pid: %d)\n", parent_pid);
     create_nodes(1, k, fd);
     if (parent_pid == getpid()) {
@@ -46,7 +47,6 @@ int main(int argc, char *argv[]) {
             perror("Failed read");
         }
         printf("%s\n", input);
-        signal(SIGINT, sig_handler);
         while (1) {
             printf("Send a message: ");
             fgets(message, sizeof(message), stdin);
@@ -151,11 +151,6 @@ void send_message(int node_id, int num_nodes, int fd[][2]) {
 }
 
 void sig_handler(int sig_num) {
-    if (sig_num == SIGINT) {
-        // close all pipes
-        // end all processes?
-        printf(" received an interrupt.\n");
-        printf("Time to exit\n");
-        exit(0);
-    }
+    printf(" process pid %d received an interrupt. Exiting...\n", getpid());
+    exit(0);
 }
