@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
     int fd[k][2];
 
     pipe(fd[0]);
+    pipe(fd[k - 1]);
     pid_t pid = fork();
 
     if (pid == 0) {
@@ -35,6 +36,7 @@ int main(int argc, char *argv[])
         char message[128];
         char node[128];
         char header[128];
+        char input[128];
 
         sleep(1); // get rid of this
 
@@ -50,7 +52,12 @@ int main(int argc, char *argv[])
         close(fd[0][0]);
         write(fd[0][1], header, sizeof(header));
         close(fd[0][1]);
-        message_status = send_message(0, k, fd);
+        printf("Node %d (pid %d)  wrote [%s]\n", 0, getpid(),  header);
+        read(fd[k-1][0], input, sizeof(input));
+        close(fd[k-1][0]);
+        printf("Node %d received [%s]\n", 0, input);
+        //message_status = send_message(0, k, fd);
+        
         }
     }
     
@@ -59,10 +66,12 @@ int main(int argc, char *argv[])
 
 int create_nodes(int node_id, int num_nodes, int fd[][2]) {
     //printf("create_nodes called\n");
-    if (node_id >= num_nodes) {
+    if (node_id > num_nodes) {
         return 1;
     }
-    pipe(fd[node_id - 1]);
+    if (node_id < num_nodes) {
+       pipe(fd[node_id - 1]);
+    }
    // printf("Created pipe at node %d\n", node_id);
     pid_t pid_next = fork();
     if (pid_next == 0) {
@@ -82,6 +91,7 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
     char input[128];
     char output[128];
     printf("Entered send_message for node %d\n", node_id);
+    while(1) {
     if (node_id >= num_nodes) {
         exit(0);
     }
@@ -104,7 +114,8 @@ int send_message(int node_id, int num_nodes, int fd[][2]) {
     write(fd[node_id][1], output, sizeof(output));
     close(fd[node_id][1]);
     printf("Node %d (pid %d)  wrote [%s]\n", node_id, getpid(),  output);
-
+    sleep(1);
+    }
     return 1;
 }
 
