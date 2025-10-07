@@ -84,8 +84,9 @@ int create_nodes(int node_id, int num_nodes, int fd[][2]) {
     if (node_id > num_nodes) {
         return 1;
     }
+    sleep(1);
     if (node_id < num_nodes) {
-        pipe(fd[node_id - 1]);
+        pipe(fd[node_id]);
     }
     pid_t pid_next = fork();
     if (pid_next == 0) {
